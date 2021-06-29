@@ -1,0 +1,11 @@
+.git/
+.idea/
+.ipynb_checkpoints/
+logs/
+config/
+data/
+__pycache__/
+.DS_Store/
+*.sqlite3
+*.ini
+
