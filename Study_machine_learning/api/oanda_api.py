@@ -1,31 +1,11 @@
 from oandapyV20 import API
 from oandapyV20.contrib.factories import InstrumentsCandlesFactory
 from datetime import datetime
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import configparser
-
-config = configparser.ConfigParser()
-config.read('../../config/oanda_conf.ini')
-
-access_token = config['LIVE']['TOKEN']
-
-api = API(access_token=access_token, environment="live")
-
-today = datetime.today()
-one_years_ago = today - relativedelta(years=1)
-one_month_ago = today - relativedelta(months=1)
-
-iso_format = '%Y-%m-%dT%H:%M:%SZ'
-api_from = one_years_ago.strftime(iso_format)
-api_to = today.strftime(iso_format)
-
-gran = 'M5'
-params = {
-    'from': api_from,
-    'to': api_to,
-    'granularity': gran
-}
+import sqlite3
 
 
 # 日時による取得
@@ -41,14 +21,52 @@ def fetch_data_by_date(params, instr='USD_JPY'):
 
     api_df = pd.DataFrame(data)
     api_df.columns = ['Time', 'Volume', 'Open', 'High', 'Low', 'Close']
-    api_df = api_df.set_index('Time')
-    api_df.index = pd.to_datetime(api_df.index, format='%Y%m%d %H:%M:%S')
+    api_df['Time'] = pd.to_datetime(api_df['Time'], format='%Y%m%d %H:%M:%S')
 
-    today = datetime.today().strftime("%m%d")
-    f_name = f'../data/{instr}-{gran}-{today}-{len(api_df)}.csv'
+    save_data(api_df)
 
-    api_df.to_csv(f_name)
     return
 
 
+def save_data(ins_df):
+    # DBに接続する。
+    conn = sqlite3.connect('../db/sqlite3s/oanda_api.sqlite3')
+    # カーソルを取得する
+    c = conn.cursor()
+    ins_df.to_sql(u'candles', conn, if_exists='append', index=None)
+
+
+def get_latest_time():
+    # DBに接続する。
+    conn = sqlite3.connect('../db/sqlite3s/oanda_api.sqlite3')
+    # カーソルを取得する
+    c = conn.cursor()
+    # 1. カーソルをイテレータ (iterator) として扱う
+    c.execute('select TIME from candles order by TIME DESC LIMIT 0, 1')
+
+    if c.fetchone()[0] is not None:
+        return datetime.strptime(c.fetchone()[0], '%Y-%m-%d %H:%M:%S+00:00') + timedelta(minutes=5)
+    else:
+        today = datetime.today()
+        return today - relativedelta(years=1)
+
+
+config = configparser.ConfigParser()
+config.read('../../config/oanda_conf.ini')
+access_token = config['LIVE']['TOKEN']
+api = API(access_token=access_token, environment="live")
+
+iso_format = '%Y-%m-%dT%H:%M:%SZ'
+
+time_from = get_latest_time()
+api_from = time_from.strftime(iso_format)
+time_to = datetime.now()
+api_to = time_to.strftime(iso_format)
+
+gran = 'M5'
+params = {
+    'from': api_from,
+    'to': api_to,
+    'granularity': gran
+}
 fetch_data_by_date(params)
