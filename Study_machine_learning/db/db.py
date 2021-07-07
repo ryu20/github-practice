@@ -2,7 +2,7 @@ import sqlite3
 
 
 def create_table(dbname, create_table_sql):
-    conn = sqlite3.connect(f'sqlite3s/{dbname}.sqlite3')
+    conn = sqlite3.connect(f'{dbname}.sqlite3')
 
     # カーソルを取得
     c = conn.cursor()
@@ -17,5 +17,6 @@ def create_table(dbname, create_table_sql):
     return
 
 
-create_table('oanda_api', 'CREATE TABLE candles  (id INTEGER PRIMARY KEY AUTOINCREMENT, Time datetime,\
-                Volume int, Open real, High real, Low real, Close real)')
+if __name__ == '__main__':
+    create_table('oanda_api', 'CREATE TABLE candles  (id INTEGER PRIMARY KEY AUTOINCREMENT, Time datetime,\
+                    Volume int, Open real, High real, Low real, Close real)')

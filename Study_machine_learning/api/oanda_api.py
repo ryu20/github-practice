@@ -2,10 +2,18 @@ from oandapyV20 import API
 from oandapyV20.contrib.factories import InstrumentsCandlesFactory
 from datetime import datetime
 from datetime import timedelta
-from dateutil.relativedelta import relativedelta
 import pandas as pd
 import configparser
 import sqlite3
+
+
+def connect_db():
+    config_parser = configparser.ConfigParser()
+    # DBに接続する。
+    config_parser.read('../config.ini')
+    file_pass = config_parser['DATABASE']['OANDA']
+    conn = sqlite3.connect(file_pass)
+    return conn
 
 
 # 日時による取得
@@ -30,7 +38,7 @@ def fetch_data_by_date(params, instr='USD_JPY'):
 
 def save_data(ins_df):
     # DBに接続する。
-    conn = sqlite3.connect('../db/sqlite3s/oanda_api.sqlite3')
+    conn = connect_db()
     # カーソルを取得する
     c = conn.cursor()
     ins_df.to_sql(u'candles', conn, if_exists='append', index=None)
@@ -38,35 +46,36 @@ def save_data(ins_df):
 
 def get_latest_time():
     # DBに接続する。
-    conn = sqlite3.connect('../db/sqlite3s/oanda_api.sqlite3')
+    conn = connect_db()
+
     # カーソルを取得する
     c = conn.cursor()
     # 1. カーソルをイテレータ (iterator) として扱う
     c.execute('select TIME from candles order by TIME DESC LIMIT 0, 1')
 
-    if c.fetchone()[0] is not None:
+    if c.fetchone() is not None:
         return datetime.strptime(c.fetchone()[0], '%Y-%m-%d %H:%M:%S+00:00') + timedelta(minutes=5)
     else:
-        today = datetime.today()
-        return today - relativedelta(years=1)
+        return datetime.strptime('2016-01-01 00:00:00+00:00', '%Y-%m-%d %H:%M:%S+00:00')
 
 
-config = configparser.ConfigParser()
-config.read('../../config/oanda_conf.ini')
-access_token = config['LIVE']['TOKEN']
-api = API(access_token=access_token, environment="live")
+if __name__ == '__main__':
+    config = configparser.ConfigParser()
+    config.read('../../config/config.ini')
+    access_token = config['LIVE']['TOKEN']
+    api = API(access_token=access_token, environment="live")
 
-iso_format = '%Y-%m-%dT%H:%M:%SZ'
+    iso_format = '%Y-%m-%dT%H:%M:%SZ'
 
-time_from = get_latest_time()
-api_from = time_from.strftime(iso_format)
-time_to = datetime.now()
-api_to = time_to.strftime(iso_format)
+    time_from = get_latest_time()
+    api_from = time_from.strftime(iso_format)
+    time_to = datetime.now()
+    api_to = time_to.strftime(iso_format)
 
-gran = 'M5'
-params = {
-    'from': api_from,
-    'to': api_to,
-    'granularity': gran
-}
-fetch_data_by_date(params)
+    gran = 'M5'
+    params = {
+        'from': api_from,
+        'to': api_to,
+        'granularity': gran
+    }
+    fetch_data_by_date(params)
