@@ -42,6 +42,7 @@ if __name__ == "__main__":
                                           )
 
     _, _, x_test, y_test = prepare_data()
+    best_model.save('saved_model/hyperas_model')
 
     print(best_model.summary())
     print("Evalutation of best performing model:")
