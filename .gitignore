@@ -6,6 +6,7 @@ config/
 csv/
 __pycache__/
 .DS_Store/
+saved_model/
 *.sqlite3
 *.ini
 
