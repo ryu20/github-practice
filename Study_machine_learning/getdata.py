@@ -1,8 +1,8 @@
 import sqlite3
+import numpy as np
 import pandas as pd
 import configparser
 from sklearn.preprocessing import MinMaxScaler
-import numpy as np
 
 
 def get_data(limit=100):
@@ -20,10 +20,11 @@ def get_data(limit=100):
     return df[::-1]
 
 
-def prepare_data():
-    window_len = 10
-    train_rate = 0.8
-    limit = 60000
+def prepare_data(window_len=10, train_rate=0.8, limit=10000):
+    if 'window_len' not in locals():
+        window_len = 10
+        train_rate = 0.8
+        limit = 10000
 
     df = get_data(limit)
     x_df = df[['Open', 'High', 'Low', 'Close']]
@@ -48,4 +49,4 @@ def prepare_data():
 
 
 if __name__ == '__main__':
-    print(get_data())
+    print(prepare_data(window_len=10, train_rate=0.8, limit=10000))
