@@ -1,10 +1,9 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Activation, Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Dropout
-import matplotlib.pyplot as plt
 from getdata import prepare_data
+from functions import history_plot
 
 
 def build_model(x_train):
@@ -18,7 +17,7 @@ def build_model(x_train):
 
 
 def train_model(plt_display=False):
-    x_train, y_train, x_test, y_test = prepare_data()
+    x_train, y_train, x_test, y_test = prepare_data(window_len=10, train_rate=0.8, limit=10000)
     model = build_model(x_train)
     history = model.fit(x_train, y_train,
                         batch_size=200,
@@ -30,23 +29,12 @@ def train_model(plt_display=False):
     print(model.summary())
     print("val_loss: ", val_loss)
     print("val_acc: ", val_acc)
-    model.save('saved_model/my_model')
+    model.save('saved_model/my_model3')
 
     if plt_display:
-        plt_model(history)
+        history_plot(history)
 
     return
-
-
-def plt_model(history):
-    # MAEをプロットしてみよう
-    fig, ax1 = plt.subplots(1, 1)
-
-    ax1.plot(history.epoch, history.history['loss'])
-    ax1.set_title('TrainingError')
-    ax1.set_ylabel('Model Loss', fontsize=12)
-    ax1.set_xlabel('# Epochs', fontsize=12)
-    plt.show()
 
 
 if __name__ == "__main__":
